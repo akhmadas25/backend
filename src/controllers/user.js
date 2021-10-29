@@ -10,9 +10,7 @@ exports.getUsers = async (req, res) => {
 
     res.send({
       status: "success",
-      data: {
-        users,
-      },
+      data: users,
     });
     console.log(users);
   } catch (error) {
