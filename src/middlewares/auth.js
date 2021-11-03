@@ -24,7 +24,7 @@ exports.admin = (req, res, next) => {
     next();
     return;
   }
-  res.status(403).status({
+  res.status(403).send({
     message: "forbidden",
   });
 };

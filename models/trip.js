@@ -1,9 +1,7 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
+"use strict";
+const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-  class Trip extends Model {
+  class trip extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -11,32 +9,39 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-
-      Trip.belongsTo(models.Country),{
-        as: "countryId",
+      trip.belongsTo(models.country, {
+        as: "country",
         foreignKey: {
-          name: "idCountry" 
-        }
-      }
+          name: "idCountry",
+        },
+      });
+      trip.hasMany(models.transaction, {
+        as: "transaction",
+        foreignKey: {
+          name: "tripId",
+        },
+      });
     }
-  };
-  Trip.init({
-    title: DataTypes.STRING,
-    idCountry: DataTypes.INTEGER,
-    picture1: DataTypes.STRING,
-    picture2: DataTypes.STRING,
-    picture3: DataTypes.STRING,
-    picture4: DataTypes.STRING,
-    accomodation: DataTypes.STRING,
-    eat: DataTypes.STRING,
-    transportation: DataTypes.STRING,
-    day: DataTypes.INTEGER,
-    night: DataTypes.INTEGER,
-    dateTrip: DataTypes.DATE,
-    price: DataTypes.INTEGER
-  }, {
-    sequelize,
-    modelName: 'Trip',
-  });
-  return Trip;
+  }
+  trip.init(
+    {
+      title: DataTypes.STRING,
+      idCountry: DataTypes.INTEGER,
+      accomodation: DataTypes.STRING,
+      transportation: DataTypes.STRING,
+      eat: DataTypes.STRING,
+      day: DataTypes.INTEGER,
+      night: DataTypes.INTEGER,
+      date: DataTypes.STRING,
+      price: DataTypes.INTEGER,
+      desc: DataTypes.STRING,
+      quota: DataTypes.INTEGER,
+      image: DataTypes.STRING,
+    },
+    {
+      sequelize,
+      modelName: "trip",
+    }
+  );
+  return trip;
 };

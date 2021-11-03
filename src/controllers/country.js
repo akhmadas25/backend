@@ -1,7 +1,7 @@
-const { Country } = require("../../models");
+const { country } = require("../../models");
 
 exports.getCountries = async (req, res) => {
-  const countries = await Country.findAll({
+  const countries = await country.findAll({
     attributes: {
       exclude: ["createdAt", "updatedAt"],
     },
@@ -25,7 +25,7 @@ exports.getCountries = async (req, res) => {
 exports.getCountry = async (req, res) => {
   try {
     const { id } = req.params;
-    const data = await Country.findOne({
+    const data = await country.findOne({
       where: {
         id,
       },
@@ -48,7 +48,15 @@ exports.getCountry = async (req, res) => {
 
 exports.addCountry = async (req, res) => {
   try {
-    await Country.create(req.body);
+    const getCountry = await country.findAll();
+    const exist = getCountry.find((item) => req.body.name === item.name);
+    if (exist) {
+      res.send({
+        status: "failed",
+        message: "trip already exist",
+      });
+    }
+    await country.create(req.body);
     res.send({
       status: "success",
       message: "Add country has successfull",
@@ -65,7 +73,7 @@ exports.addCountry = async (req, res) => {
 exports.editCountry = async (req, res) => {
   try {
     const { id } = req.params;
-    await Country.update(req.body, {
+    await country.update(req.body, {
       where: {
         id,
       },
@@ -86,7 +94,7 @@ exports.editCountry = async (req, res) => {
 exports.deleteCountry = async (req, res) => {
   try {
     const { id } = req.params;
-    await Country.destroy({
+    await country.destroy({
       where: {
         id,
       },

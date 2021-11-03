@@ -1,12 +1,22 @@
-const { Trip, Country } = require("../../models");
+const { trip, country } = require("../../models");
 
 exports.getTrips = async (req, res) => {
   try {
-    const data = await Trip.findAll({
+    const data = await trip.findAll({
+      include: [
+        {
+          model: country,
+          as: "country",
+          attributes: {
+            exclude: ["createdAt", "updatedAt"],
+          },
+        },
+      ],
       attributes: {
-        exclude: ["createdAt", "updatedAt"],
+        exclude: ["createdAt", "updatedAt", "idCountry"],
       },
     });
+    console.log(data);
     res.send({
       status: "success",
       data: data,
@@ -22,27 +32,30 @@ exports.getTrips = async (req, res) => {
 exports.getTrip = async (req, res) => {
   try {
     const { id } = req.params;
-    const data = await Trip.findOne({
+    const data = await trip.findOne({
       where: {
         id,
       },
-      attributes: {
-        exclude: ["createdAt", "updatedAt"],
-      },
       include: [
         {
-          model: Country,
+          model: country,
           as: "country",
           attributes: {
-            exclude: ["createdAt", "updateAt"],
+            exclude: ["createdAt", "updatedAt"],
           },
         },
       ],
+      attributes: {
+        exclude: ["createdAt", "updatedAt"],
+      },
     });
+
     res.send({
       status: "success",
       message: `get trip with id = ${id} success`,
-      data: data,
+      data: {
+        data,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -54,37 +67,30 @@ exports.getTrip = async (req, res) => {
 
 exports.addTrip = async (req, res) => {
   try {
-    const { country: countryName, ...data } = req.body;
-    const newTrip = await Trip.create({
-      ...data,
-      picture1: req.files.image[0].filename,
-      picture2: req.files.image[1].filename,
-      picture3: req.files.image[2].filename,
-      picture4: req.files.image[3].filename,
-    });
-    const countryData = await Country.findOne({
-      where: {
-        name: countryName,
-      },
-    });
-
-    if (countryData.name !== countryName) {
-      await Country.create({
-        name: countryName,
+    const { ...data } = req.body;
+    const { image } = req.files;
+    const images = [];
+    for (let item of image) {
+      images.push(item.filename);
+    }
+    const getTrip = await trip.findAll();
+    const exist = getTrip.find((item) => req.body.title === item.title);
+    if (exist) {
+      res.send({
+        status: "failed",
+        message: "country already exist",
+      });
+    } else {
+      const imagesToString = JSON.stringify(images);
+      const newTrip = await trip.create({
+        ...data,
+        image: imagesToString,
       });
     }
 
-    newTrip = JSON.parse(JSON.stringify(newTrip));
     res.send({
       status: "success",
       message: "add trip was successfull!",
-      data: {
-        ...newTrip,
-        picture1: "http:localhost:5000/uploads/" + newTrip.picture1,
-        picture2: "http:localhost:5000/uploads/" + newTrip.picture2,
-        picture3: "http:localhost:5000/uploads/" + newTrip.picture3,
-        picture4: "http:localhost:5000/uploads/" + newTrip.picture4,
-      },
     });
   } catch (error) {
     console.log(error);
@@ -96,12 +102,49 @@ exports.addTrip = async (req, res) => {
 
 exports.editTrip = async (req, res) => {
   try {
-    const { id } = req.params.id;
-    await Trip.update(req.body, {
-      where: {
-        id,
+    const { id } = req.params;
+    const {
+      title,
+      idCountry,
+      eat,
+      day,
+      night,
+      accomodation,
+      transportation,
+      date,
+      price,
+      desc,
+      quota,
+    } = req.body;
+
+    const { image } = req.files;
+    const images = [];
+    for (let item of image) {
+      images.push(item.filename);
+    }
+    const imagesToString = JSON.stringify(images);
+
+    await trip.update(
+      {
+        title: title,
+        idCountry: idCountry,
+        eat: eat,
+        day: day,
+        night: night,
+        accomodation: accomodation,
+        transportation: transportation,
+        date: date,
+        price: price,
+        desc: desc,
+        quota: quota,
+        image: imagesToString,
       },
-    });
+      {
+        where: {
+          id,
+        },
+      }
+    );
     res.send({
       status: "success",
       message: "update trip success!",
@@ -116,8 +159,8 @@ exports.editTrip = async (req, res) => {
 
 exports.deleteTrip = async (req, res) => {
   try {
-    const { id } = req.params.id;
-    await Trip.destroy({
+    const { id } = req.params;
+    await trip.destroy({
       where: {
         id,
       },
