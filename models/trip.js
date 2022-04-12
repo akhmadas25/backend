@@ -37,6 +37,7 @@ module.exports = (sequelize, DataTypes) => {
       desc: DataTypes.STRING,
       quota: DataTypes.INTEGER,
       image: DataTypes.STRING,
+      available: DataTypes.INTEGER,
     },
     {
       sequelize,

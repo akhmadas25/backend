@@ -2,8 +2,8 @@ const { User, trip, transaction, country } = require("../../models");
 
 exports.addTransaction = async (req, res) => {
   try {
-    const { tripId, qty, ...data } = req.body;
-    
+    const { tripId, qty } = req.body;
+
     if (req.user.role == "admin") {
       res.send({
         message: "access denied",
@@ -14,11 +14,12 @@ exports.addTransaction = async (req, res) => {
         id: tripId,
       },
     });
-    const newQuota = detailTrip.quota - qty;
-    console.log(tripId);
+
+    const newQuota = detailTrip.dataValues.available + qty;
+
     const updateQuota = await trip.update(
       {
-        quota: newQuota,
+        available: newQuota,
       },
       {
         where: {
@@ -27,11 +28,9 @@ exports.addTransaction = async (req, res) => {
       }
     );
 
-    const totalPrice = detailTrip.price * qty;
-    console.log(totalPrice);
+    const totalPrice = detailTrip.dataValues.price * qty;
 
     const newTransaction = await transaction.create({
-      ...data,
       total: totalPrice,
       qty: qty,
       tripId: tripId,
@@ -51,7 +50,7 @@ exports.addTransaction = async (req, res) => {
 
 exports.getTransactions = async (req, res) => {
   try {
-    const data = await transaction.findAll({
+    let data = await transaction.findAll({
       include: [
         {
           model: User,
@@ -70,12 +69,15 @@ exports.getTransactions = async (req, res) => {
               attributes: { exclude: ["createdAt", "updatedAt"] },
             },
           ],
+          attributes: { exclude: ["createdAt", "updatedAt"] },
         },
       ],
+      order: [["id", "DESC"]],
       attributes: {
         exclude: ["createdAt", "updatedAt", "userId", "tripId"],
       },
     });
+    data = JSON.parse(JSON.stringify(data));
     res.send({
       status: "succes",
       data: data,
@@ -90,11 +92,10 @@ exports.getTransactions = async (req, res) => {
 
 exports.getTransaction = async (req, res) => {
   try {
-    const { id } = req.params;
     const userId = req.user.id;
-    const data = await transaction.findOne({
+
+    let data = await transaction.findAll({
       where: {
-        id,
         userId,
       },
       include: [
@@ -115,21 +116,70 @@ exports.getTransaction = async (req, res) => {
               attributes: { exclude: ["createdAt", "updatedAt"] },
             },
           ],
+          attributes: {
+            exclude: ["image", "createdAt", "updatedAt", "desc", "quota"],
+          },
         },
       ],
+      order: [["id", "DESC"]],
       attributes: {
         exclude: ["createdAt", "updatedAt", "userId", "tripId"],
-      },
-    });
-    const detailTrip = await trip.findOne({
-      where: {
-        id: tripId,
       },
     });
 
     res.send({
       status: "success",
       data: data,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      message: "server error",
+    });
+  }
+};
+
+exports.getTransactionId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let data = await transaction.findOne({
+      where: {
+        id,
+      },
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: {
+            exclude: ["createdAt", "updatedAt", "role", "password"],
+          },
+        },
+        {
+          model: trip,
+          as: "trip",
+          include: [
+            {
+              model: country,
+              as: "country",
+              attributes: { exclude: ["createdAt", "updatedAt"] },
+            },
+          ],
+          attributes: {
+            exclude: ["image", "createdAt", "updatedAt", "desc", "quota"],
+          },
+        },
+      ],
+      attributes: {
+        exclude: ["createdAt", "updatedAt", "userId", "tripId"],
+      },
+    });
+
+    const newData = [];
+    newData.push(data);
+
+    res.send({
+      status: "success",
+      data: newData,
     });
   } catch (error) {
     console.log(error);
@@ -154,6 +204,71 @@ exports.editTransaction = async (req, res) => {
         },
       }
     );
+    res.send({
+      message: `payment was successfull ${status}`,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      message: "server error",
+    });
+  }
+};
+
+exports.editStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const getTransaction = await transaction.findOne({
+      where: {
+        id,
+      },
+    });
+
+    const tripId = getTransaction.dataValues.tripId;
+    const qty = getTransaction.dataValues.qty;
+
+    const getTrip = await trip.findOne({
+      where: {
+        id: tripId,
+      },
+    });
+
+    const available = getTrip.dataValues.available;
+    if (status === "canceled") {
+      await trip.update(
+        {
+          available: available - qty,
+        },
+        {
+          where: {
+            id: tripId,
+          },
+        }
+      );
+      await transaction.update(
+        {
+          status: status,
+        },
+        {
+          where: {
+            id,
+          },
+        }
+      );
+    } else if (status === "aproved") {
+      await transaction.update(
+        {
+          status: status,
+        },
+        {
+          where: {
+            id,
+          },
+        }
+      );
+    }
+
     res.send({
       message: `payment was successfull ${status}`,
     });

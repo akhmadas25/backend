@@ -49,25 +49,22 @@ exports.register = async (req, res) => {
         password: hashedPassword,
         address: req.body.address,
         phone: req.body.phone,
-        profie: userProfile,
+        profile: userProfile,
+      });
+      const token = jwt.sign(
+        { id: newUser.id, role: newUser.role },
+        process.env.JWT_KEY
+      );
+      res.status(200).send({
+        status: "success...",
+        data: {
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+          token,
+        },
       });
     }
-
-    // generate token
-    const token = jwt.sign(
-      { id: newUser.id, role: newUser.role },
-      process.env.JWT_KEY
-    );
-
-    res.status(200).send({
-      status: "success...",
-      data: {
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        token,
-      },
-    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -133,6 +130,32 @@ exports.login = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).send({
+      status: "failed",
+      message: "Server Error",
+    });
+  }
+};
+
+exports.checkAuth = async (req, res) => {
+  try {
+    const id = req.user.id;
+    console.log(id);
+    const dataUser = await User.findOne({
+      where: {
+        id,
+      },
+      attributes: {
+        exclude: ["createdAt", "updatedAt", "password"],
+      },
+    });
+
+    res.send({
+      status: "success...",
+      data: dataUser,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status({
       status: "failed",
       message: "Server Error",
     });

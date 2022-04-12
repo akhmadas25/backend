@@ -45,3 +45,23 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
+exports.updateProfile = async (req, res) => {
+  try {
+    const id = req.user.id;
+    await User.update(
+      {
+        profile: req.files.profile[0].filename,
+      },
+      {
+        where: {
+          id,
+        },
+      }
+    );
+    res.send({
+      message: "profile successfully updated!",
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};

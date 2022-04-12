@@ -29,8 +29,8 @@ module.exports = (sequelize, DataTypes) => {
       qty: DataTypes.INTEGER,
       total: DataTypes.INTEGER,
       status: {
-        type: DataTypes.ENUM("pending", "aproved", "canceled"),
-        defaultValue: "pending",
+        type: DataTypes.ENUM("waiting for payment", "waiting for approved", "aproved", "canceled"),
+        defaultValue: "waiting for payment",
       },
       attachment: DataTypes.STRING,
       tripId: DataTypes.INTEGER,

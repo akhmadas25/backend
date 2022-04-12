@@ -1,5 +1,5 @@
 const { trip, country } = require("../../models");
-
+const _ = require("lodash");
 exports.getTrips = async (req, res) => {
   try {
     const data = await trip.findAll({
@@ -16,10 +16,25 @@ exports.getTrips = async (req, res) => {
         exclude: ["createdAt", "updatedAt", "idCountry"],
       },
     });
-    console.log(data);
+
     res.send({
       status: "success",
-      data: data,
+      data: data.map((item) => {
+        const itemValue = JSON.parse(item.dataValues.image);
+
+        const newData = [];
+        for (let i = 0; i < itemValue.length; i++) {
+          newData.push(`${process.env.PATH_TRIPS}${itemValue[i]}`);
+        }
+
+        dataImage = newData;
+        const countryName = item.dataValues.country.name;
+
+        // change default image in data to new link image
+        item.dataValues.image = dataImage;
+        item.dataValues.country = countryName;
+        return item;
+      }),
     });
   } catch (error) {
     console.log(error);
@@ -41,21 +56,33 @@ exports.getTrip = async (req, res) => {
           model: country,
           as: "country",
           attributes: {
-            exclude: ["createdAt", "updatedAt"],
+            exclude: ["createdAt", "updatedAt", "id"],
           },
         },
       ],
       attributes: {
-        exclude: ["createdAt", "updatedAt"],
+        exclude: ["createdAt", "updatedAt", "idCountry"],
       },
     });
+
+    const newData = [];
+    newData.push(data);
 
     res.send({
       status: "success",
       message: `get trip with id = ${id} success`,
-      data: {
-        data,
-      },
+      data: newData.map((item) => {
+        const itemValue = JSON.parse(data.image);
+        const newImage = [];
+        for (let i = 0; i < itemValue.length; i++) {
+          newImage.push(`${process.env.PATH_TRIPS}${itemValue[i]}`);
+        }
+
+        const countryName = item.dataValues.country.dataValues.name;
+        item.image = newImage;
+        item.dataValues.country = countryName;
+        return item;
+      }),
     });
   } catch (error) {
     console.log(error);
@@ -73,12 +100,13 @@ exports.addTrip = async (req, res) => {
     for (let item of image) {
       images.push(item.filename);
     }
+   
     const getTrip = await trip.findAll();
     const exist = getTrip.find((item) => req.body.title === item.title);
     if (exist) {
       res.send({
         status: "failed",
-        message: "country already exist",
+        message: "trip already exist",
       });
     } else {
       const imagesToString = JSON.stringify(images);
@@ -86,12 +114,11 @@ exports.addTrip = async (req, res) => {
         ...data,
         image: imagesToString,
       });
+      res.send({
+        status: "success",
+        message: "add trip was successfull!",
+      });
     }
-
-    res.send({
-      status: "success",
-      message: "add trip was successfull!",
-    });
   } catch (error) {
     console.log(error);
     res.status(500).send({

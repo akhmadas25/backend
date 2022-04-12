@@ -3,8 +3,8 @@ const express = require("express");
 const router = express.Router();
 
 // Controller
-const { getUsers, deleteUser } = require("../controllers/user");
-const { register, login } = require("../controllers/auth");
+const { getUsers, deleteUser, updateProfile } = require("../controllers/user");
+const { register, login, checkAuth } = require("../controllers/auth");
 const {
   getCountries,
   getCountry,
@@ -23,12 +23,19 @@ const {
 // midleware
 const { auth, admin } = require("../middlewares/auth");
 const { uploadFile } = require("../middlewares/uploadFile");
-const { getTransactions, getTransaction, addTransaction, editTransaction } = require("../controllers/transaction");
+const {
+  getTransactions,
+  getTransaction,
+  addTransaction,
+  editTransaction,
+  editStatus,
+  getTransactionId,
+} = require("../controllers/transaction");
 
 // user
 router.get("/users", auth, admin, getUsers);
 router.delete("/user/:id", auth, admin, deleteUser);
-// router.post("/user/:id")
+router.patch("/user", auth, uploadFile("profile"), updateProfile);
 // country
 router.post("/country", auth, admin, addCountry);
 router.get("/country/:id", getCountry);
@@ -39,15 +46,23 @@ router.get("/countries", getCountries);
 router.get("/trips", getTrips);
 router.get("/trip/:id", getTrip);
 router.post("/trip", auth, admin, uploadFile("image"), addTrip);
-router.patch("/trip/:id", auth, admin, uploadFile("image"), editTrip)
+router.patch("/trip/:id", auth, admin, uploadFile("image"), editTrip);
 router.delete("/trip/:id", auth, admin, deleteTrip);
 // transaction
-router.get("/transactions", auth,admin, getTransactions);
-router.get("/transaction/:id", auth, getTransaction);
+router.get("/transactions", auth, admin, getTransactions);
+router.get("/transaction", auth, getTransaction);
+router.get("/transaction/:id", auth, getTransactionId);
 router.post("/transaction", auth, addTransaction);
-router.patch("/transaction/:id", auth, admin, uploadFile("attachment"), editTransaction);
+router.patch("/transactionAdmin/:id", auth, admin, editStatus);
+router.patch(
+  "/transaction/:id",
+  auth,
+  uploadFile("attachment"),
+  editTransaction
+);
 
 // auth
 router.post("/login", login);
 router.post("/register", register);
+router.get("/checkAuth", auth, checkAuth);
 module.exports = router;

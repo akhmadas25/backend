@@ -9,9 +9,7 @@ exports.getCountries = async (req, res) => {
   try {
     res.send({
       status: "success",
-      data: {
-        countries,
-      },
+      data: countries
     });
   } catch (error) {
     console.log(error);
